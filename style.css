@@ -1,0 +1,811 @@
+:root {
+    --background: #08090b;
+    --panel: #111318;
+    --panel-secondary: #181b21;
+    --border: #292d35;
+
+    --text: #f2f3f5;
+    --muted: #9da3ad;
+
+    --accent: #4feaff;
+    --accent-dark: #1da9bd;
+
+    --danger: #ff5f6d;
+
+    --grid: rgba(255, 255, 255, 0.12);
+
+    --topbar-height: 64px;
+}
+
+
+/* =========================
+   LIGHT MODE
+========================= */
+
+body.light {
+    --background: #f5f6f8;
+    --panel: #ffffff;
+    --panel-secondary: #f0f1f3;
+    --border: #d8dbe0;
+
+    --text: #16181c;
+    --muted: #646b75;
+
+    --grid: rgba(0, 0, 0, 0.15);
+}
+
+
+/* =========================
+   GLOBAL
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background: var(--background);
+    color: var(--text);
+
+    overflow: hidden;
+}
+
+
+/* =========================
+   TOP BAR
+========================= */
+
+.topbar {
+    height: var(--topbar-height);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 18px;
+
+    background: var(--panel);
+
+    border-bottom: 1px solid var(--border);
+
+    position: relative;
+    z-index: 100;
+}
+
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+
+.brand-title {
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+
+.brand-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+}
+
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+button,
+select,
+input,
+textarea {
+    font-family: inherit;
+}
+
+
+button,
+select {
+    border: 1px solid var(--border);
+
+    background: var(--panel-secondary);
+
+    color: var(--text);
+
+    border-radius: 8px;
+
+    padding: 8px 12px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s,
+        border-color 0.15s,
+        transform 0.1s;
+}
+
+
+button:hover {
+    border-color: var(--accent);
+}
+
+
+button:active {
+    transform: translateY(1px);
+}
+
+
+.primary-button {
+    background: var(--accent);
+    color: #061014;
+
+    border-color: var(--accent);
+
+    font-weight: 700;
+}
+
+
+.primary-button:hover {
+    background: #74edff;
+}
+
+
+.full-width {
+    width: 100%;
+}
+
+
+/* =========================
+   MAIN
+========================= */
+
+.application {
+    height: calc(100vh - var(--topbar-height));
+
+    display: grid;
+
+    grid-template-columns: 1fr 360px;
+}
+
+
+/* =========================
+   MAP
+========================= */
+
+.map-container {
+    position: relative;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow: hidden;
+
+    background: var(--background);
+}
+
+
+#mapViewport {
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    cursor: grab;
+
+    position: relative;
+}
+
+
+#mapViewport.dragging {
+    cursor: grabbing;
+}
+
+
+#mapCanvas {
+    width: 5000px;
+    height: 5000px;
+
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform-origin: center center;
+}
+
+
+#grid {
+    position: absolute;
+
+    inset: 0;
+
+    background-image:
+        radial-gradient(
+            circle,
+            var(--grid) 1px,
+            transparent 1px
+        );
+
+    background-size: 25px 25px;
+
+    pointer-events: none;
+}
+
+
+#mapSvg {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: visible;
+}
+
+
+/* =========================
+   MAP LOCATIONS
+========================= */
+
+.map-location {
+    cursor: pointer;
+
+    stroke-width: 2;
+
+    transition:
+        opacity 0.15s,
+        stroke-width 0.15s;
+}
+
+
+.map-location:hover {
+    stroke-width: 4;
+}
+
+
+.map-location.selected {
+    stroke: var(--accent);
+
+    stroke-width: 4;
+}
+
+
+.location-label {
+    pointer-events: none;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    fill: var(--text);
+
+    paint-order: stroke;
+
+    stroke: var(--background);
+
+    stroke-width: 4px;
+
+    stroke-linejoin: round;
+}
+
+
+/* =========================
+   MAP CONTROLS
+========================= */
+
+.map-controls {
+    position: absolute;
+
+    bottom: 18px;
+    left: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 6px;
+
+    background: var(--panel);
+
+    border: 1px solid var(--border);
+
+    border-radius: 10px;
+
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+
+.map-controls button {
+    min-width: 34px;
+}
+
+
+#zoomLabel {
+    min-width: 55px;
+
+    text-align: center;
+
+    font-size: 12px;
+
+    color: var(--muted);
+}
+
+
+/* =========================
+   EDITOR TOOLBAR
+========================= */
+
+.editor-toolbar {
+    position: absolute;
+
+    top: 18px;
+    left: 18px;
+
+    display: flex;
+
+    gap: 6px;
+
+    padding: 6px;
+
+    background: var(--panel);
+
+    border: 1px solid var(--border);
+
+    border-radius: 10px;
+
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+
+    z-index: 10;
+}
+
+
+.tool-button.active {
+    background: var(--accent);
+
+    color: #061014;
+
+    border-color: var(--accent);
+
+    font-weight: 700;
+}
+
+
+.tool-button.danger {
+    color: var(--danger);
+}
+
+
+/* =========================
+   INFO PANEL
+========================= */
+
+.info-panel {
+    height: 100%;
+
+    overflow-y: auto;
+
+    background: var(--panel);
+
+    border-left: 1px solid var(--border);
+}
+
+
+.panel-empty {
+    padding: 45px 25px;
+
+    text-align: center;
+
+    color: var(--muted);
+}
+
+
+.panel-empty-icon {
+    font-size: 40px;
+
+    margin-bottom: 12px;
+}
+
+
+.panel-empty h2 {
+    color: var(--text);
+
+    margin: 0 0 8px;
+}
+
+
+.panel-content {
+    padding: 22px;
+}
+
+
+.panel-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 20px;
+}
+
+
+.panel-title {
+    margin: 0;
+
+    font-size: 24px;
+
+    line-height: 1.15;
+}
+
+
+.panel-type {
+    color: var(--muted);
+
+    font-size: 12px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1px;
+
+    margin-top: 5px;
+}
+
+
+.section {
+    margin-top: 22px;
+}
+
+
+.section-title {
+    font-size: 12px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 1.2px;
+
+    color: var(--muted);
+
+    margin-bottom: 8px;
+}
+
+
+.info-box {
+    background: var(--panel-secondary);
+
+    border: 1px solid var(--border);
+
+    border-radius: 8px;
+
+    padding: 10px 12px;
+
+    line-height: 1.5;
+
+    white-space: pre-wrap;
+}
+
+
+.info-list {
+    margin: 0;
+
+    padding-left: 20px;
+}
+
+
+.tag-container {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
+}
+
+
+.tag {
+    background: var(--panel-secondary);
+
+    border: 1px solid var(--border);
+
+    border-radius: 999px;
+
+    padding: 4px 9px;
+
+    font-size: 12px;
+}
+
+
+.link-button {
+    display: inline-block;
+
+    color: var(--accent);
+
+    text-decoration: none;
+
+    margin-top: 5px;
+}
+
+
+.link-button:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================
+   SCREENSHOTS
+========================= */
+
+.screenshot-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 8px;
+}
+
+
+.screenshot {
+    width: 100%;
+
+    aspect-ratio: 16 / 9;
+
+    object-fit: cover;
+
+    border-radius: 7px;
+
+    border: 1px solid var(--border);
+
+    cursor: pointer;
+}
+
+
+/* =========================
+   EDITOR FORM
+========================= */
+
+.form-group {
+    margin-bottom: 13px;
+}
+
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    font-size: 12px;
+
+    color: var(--muted);
+}
+
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+
+    padding: 9px 10px;
+
+    background: var(--panel-secondary);
+
+    color: var(--text);
+
+    border: 1px solid var(--border);
+
+    border-radius: 7px;
+
+    outline: none;
+}
+
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: var(--accent);
+}
+
+
+.form-group textarea {
+    min-height: 90px;
+
+    resize: vertical;
+}
+
+
+.editor-actions {
+    display: flex;
+
+    gap: 7px;
+
+    margin-top: 20px;
+}
+
+
+.danger-button {
+    color: var(--danger);
+
+    border-color: rgba(255, 95, 109, 0.4);
+}
+
+
+.danger-button:hover {
+    border-color: var(--danger);
+}
+
+
+/* =========================
+   VERTEX HANDLES
+========================= */
+
+.vertex {
+    fill: var(--accent);
+
+    stroke: #071014;
+
+    stroke-width: 2;
+
+    cursor: move;
+}
+
+
+/* =========================
+   MODALS
+========================= */
+
+.modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.65);
+
+    backdrop-filter: blur(5px);
+}
+
+
+.modal-card {
+    width: min(420px, calc(100vw - 30px));
+
+    background: var(--panel);
+
+    border: 1px solid var(--border);
+
+    border-radius: 13px;
+
+    padding: 25px;
+
+    position: relative;
+
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.5);
+}
+
+
+.modal-card h2 {
+    margin-top: 0;
+}
+
+
+.modal-card p {
+    color: var(--muted);
+
+    line-height: 1.5;
+}
+
+
+.modal-card input {
+    width: 100%;
+
+    padding: 11px;
+
+    margin: 10px 0 12px;
+
+    background: var(--panel-secondary);
+
+    color: var(--text);
+
+    border: 1px solid var(--border);
+
+    border-radius: 8px;
+
+    outline: none;
+}
+
+
+.modal-card input:focus {
+    border-color: var(--accent);
+}
+
+
+.modal-close {
+    position: absolute;
+
+    top: 12px;
+    right: 12px;
+
+    border: none;
+
+    background: transparent;
+
+    font-size: 22px;
+
+    color: var(--muted);
+}
+
+
+.error-message {
+    color: var(--danger);
+
+    font-size: 13px;
+
+    margin-bottom: 10px;
+}
+
+
+/* =========================
+   UTILITIES
+========================= */
+
+.hidden {
+    display: none !important;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 800px) {
+
+    .application {
+        grid-template-columns: 1fr;
+    }
+
+    .info-panel {
+        position: fixed;
+
+        right: 0;
+        top: var(--topbar-height);
+
+        width: min(360px, 90vw);
+
+        height: calc(100vh - var(--topbar-height));
+
+        z-index: 50;
+    }
+
+    .brand-subtitle {
+        display: none;
+    }
+
+}
