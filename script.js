@@ -35,7 +35,7 @@
 const CONFIG = {
 
     workerUrl:
-        "https://REPLACE-WITH-YOUR-WORKER-URL.workers.dev",
+        "https://rbwr-map-api.arthurdunitt.workers.dev",
 
     themeKey:
         "rbwr_facility_atlas_theme"
