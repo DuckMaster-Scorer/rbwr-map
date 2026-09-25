@@ -34,32 +34,8 @@
 
 const CONFIG = {
 
-    /*
-        This is the SHA-256 hash of the editor password.
-
-        DEFAULT PASSWORD:
-
-        rbwr
-
-        CHANGE THIS before publishing.
-
-        You can generate a new hash using the browser console
-        with:
-
-        crypto.subtle.digest(
-            "SHA-256",
-            new TextEncoder().encode("YOUR PASSWORD")
-        )
-
-        The conversion helper at the bottom of this file can
-        also be used.
-    */
-
-    passwordHash:
-        "2f6f9d0a2e4e8c4f0a0b7f6a6e1f6d4f7e0f3a5b4d8f9c2a1e6d5b3c7f8a9e0d",
-
-    storageKey:
-        "rbwr_facility_atlas",
+    workerUrl:
+        "https://REPLACE-WITH-YOUR-WORKER-URL.workers.dev",
 
     themeKey:
         "rbwr_facility_atlas_theme"
@@ -162,87 +138,223 @@ const importFile =
    INITIALISATION
 ========================================================= */
 
-loadState();
-
 loadTheme();
-
-renderFloors();
-
-renderMap();
 
 updateEditorUI();
 
 updateView();
+
+loadSharedMap();
 
 
 /* =========================================================
    STORAGE
 ========================================================= */
 
+let editorPassword = "";
+let mapDirty = false;
+
 function saveState() {
-
-    /*
-        Don't store temporary editor state.
-    */
-
-    const saveData = {
-
-        floors: state.floors,
-
-        currentFloorId:
-            state.currentFloorId,
-
-        nextLocationId:
-            state.nextLocationId,
-
-        nextFloorId:
-            state.nextFloorId
-    };
-
-    localStorage.setItem(
-        CONFIG.storageKey,
-        JSON.stringify(saveData)
-    );
+    mapDirty = true;
+    updateSaveButton();
 }
 
+async function loadSharedMap() {
+    try {
+        const response = await fetch(
+            `${CONFIG.workerUrl}/map`,
+            { cache: "no-store" }
+        );
 
-function loadState() {
+        const result = await response.json();
 
-    const saved =
-        localStorage.getItem(CONFIG.storageKey);
+        if (!response.ok || !result.success) {
+            throw new Error(
+                result.error ||
+                `Map request failed with HTTP ${response.status}.`
+            );
+        }
 
-    if (!saved) {
+        const map = result.map || {};
+
+        state.floors =
+            Array.isArray(map.floors)
+                ? map.floors
+                : [];
+
+        if (!state.floors.length) {
+            state.floors = [
+                {
+                    id: "floor_1",
+                    name: "Surface",
+                    locations: []
+                }
+            ];
+        }
+
+        state.floors.forEach(floor => {
+            if (!Array.isArray(floor.locations)) {
+                floor.locations = [];
+            }
+        });
+
+        state.currentFloorId =
+            map.currentFloorId &&
+            state.floors.some(
+                floor => floor.id === map.currentFloorId
+            )
+                ? map.currentFloorId
+                : state.floors[0].id;
+
+        state.nextLocationId =
+            Number.isInteger(map.nextLocationId)
+                ? map.nextLocationId
+                : getNextLocationId();
+
+        state.nextFloorId =
+            Number.isInteger(map.nextFloorId)
+                ? map.nextFloorId
+                : getNextFloorId();
+
+        state.selectedLocationId = null;
+        mapDirty = false;
+
+        renderFloors();
+        renderMap();
+        renderEmptyPanel();
+        updateSaveButton();
+
+    } catch (error) {
+        console.error("Could not load shared RBWR map:", error);
+
+        alert(
+            "The shared RBWR map could not be loaded. Check the Worker URL and make sure the Worker is running."
+        );
+
+        renderFloors();
+        renderMap();
+        renderEmptyPanel();
+    }
+}
+
+function getNextLocationId() {
+    let highest = 0;
+
+    state.floors.forEach(floor => {
+        floor.locations.forEach(location => {
+            const match = String(location.id || "").match(/(\d+)$/);
+
+            if (match) {
+                highest = Math.max(
+                    highest,
+                    Number(match[1])
+                );
+            }
+        });
+    });
+
+    return highest + 1;
+}
+
+function getNextFloorId() {
+    let highest = 0;
+
+    state.floors.forEach(floor => {
+        const match = String(floor.id || "").match(/(\d+)$/);
+
+        if (match) {
+            highest = Math.max(
+                highest,
+                Number(match[1])
+            );
+        }
+    });
+
+    return highest + 1;
+}
+
+async function saveSharedMap() {
+    if (!state.editorMode || !editorPassword) {
+        alert("Enter editor mode before saving the shared map.");
         return;
     }
 
+    const saveButton =
+        document.getElementById("saveSharedMapButton");
+
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving…";
+    }
+
     try {
+        const map = {
+            version: 1,
+            floors: state.floors,
+            currentFloorId: state.currentFloorId,
+            nextLocationId: state.nextLocationId,
+            nextFloorId: state.nextFloorId
+        };
 
-        const parsed =
-            JSON.parse(saved);
-
-        state.floors =
-            parsed.floors || state.floors;
-
-        state.currentFloorId =
-            parsed.currentFloorId ||
-            state.currentFloorId;
-
-        state.nextLocationId =
-            parsed.nextLocationId ||
-            state.nextLocationId;
-
-        state.nextFloorId =
-            parsed.nextFloorId ||
-            state.nextFloorId;
-
-    } catch (error) {
-
-        console.error(
-            "Could not load saved map:",
-            error
+        const response = await fetch(
+            `${CONFIG.workerUrl}/save`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${editorPassword}`
+                },
+                body: JSON.stringify({
+                    map,
+                    commitMessage: "Update RBWR Atlas map"
+                })
+            }
         );
 
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(
+                result.error ||
+                result.details ||
+                `Save failed with HTTP ${response.status}.`
+            );
+        }
+
+        mapDirty = false;
+        updateSaveButton();
+
+        alert("Map saved successfully. Everyone will now receive this version.");
+
+    } catch (error) {
+        console.error("Could not save shared map:", error);
+
+        alert(
+            `Could not save the shared map.\n\n${error.message}`
+        );
+
+        updateSaveButton();
+
+    } finally {
+        if (saveButton) {
+            saveButton.disabled = false;
+            updateSaveButton();
+        }
     }
+}
+
+function updateSaveButton() {
+    const button =
+        document.getElementById("saveSharedMapButton");
+
+    if (!button) {
+        return;
+    }
+
+    button.textContent =
+        mapDirty
+            ? "💾 Save Changes*"
+            : "💾 Save Changes";
 }
 
 
@@ -300,8 +412,6 @@ floorSelector.addEventListener(
         renderMap();
 
         renderEmptyPanel();
-
-        saveState();
     }
 );
 
@@ -1063,8 +1173,6 @@ function renderViewerPanel(location) {
 
     `;
 }
-
-
 /* =========================================================
    EDITOR PANEL
 ========================================================= */
@@ -1503,15 +1611,6 @@ function saveLocation(location) {
         ).value.trim();
 
 
-    if (
-        location.type === "Other" &&
-        location.customType
-    ) {
-
-        location.type =
-            location.customType;
-    }
-
 
     location.unit =
         document.getElementById(
@@ -1716,6 +1815,8 @@ document
                 state.editorMode =
                     false;
 
+                editorPassword = "";
+
                 state.drawingMode =
                     "select";
 
@@ -1755,11 +1856,25 @@ document
 
 function updateEditorUI() {
 
+    const saveButton =
+        document.getElementById("saveSharedMapButton");
+
+    const importButton =
+        document.getElementById("importMapButton");
+
     if (state.editorMode) {
 
         editorToolbar.classList.remove(
             "hidden"
         );
+
+        if (saveButton) {
+            saveButton.style.display = "inline-flex";
+        }
+
+        if (importButton) {
+            importButton.style.display = "inline-flex";
+        }
 
         document
             .getElementById(
@@ -1773,6 +1888,14 @@ function updateEditorUI() {
         editorToolbar.classList.add(
             "hidden"
         );
+
+        if (saveButton) {
+            saveButton.style.display = "none";
+        }
+
+        if (importButton) {
+            importButton.style.display = "none";
+        }
 
         document
             .getElementById(
@@ -1833,42 +1956,61 @@ async function enterEditor() {
     const password =
         passwordInput.value;
 
-    const hash =
-        await sha256(password);
+    if (!password) {
+        passwordError.textContent = "Please enter the editor password.";
+        passwordError.classList.remove("hidden");
+        return;
+    }
 
-    /*
-        NOTE:
-        This is client-side protection only.
+    const submitButton =
+        document.getElementById("passwordSubmit");
 
-        It prevents casual access but should not be
-        treated as true authentication for a public
-        production website.
-    */
+    submitButton.disabled = true;
+    submitButton.textContent = "Checking…";
 
-    if (
-        hash ===
-        CONFIG.passwordHash
-    ) {
-
-        state.editorMode =
-            true;
-
-        passwordModal.classList.add(
-            "hidden"
+    try {
+        const response = await fetch(
+            `${CONFIG.workerUrl}/login`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ password })
+            }
         );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            passwordError.textContent =
+                result.error || "Incorrect password.";
+
+            passwordError.classList.remove("hidden");
+            return;
+        }
+
+        editorPassword = password;
+        state.editorMode = true;
+        passwordModal.classList.add("hidden");
+        passwordError.classList.add("hidden");
 
         updateEditorUI();
-
         renderMap();
-
         renderInfoPanel();
+        updateSaveButton();
 
-    } else {
+    } catch (error) {
+        console.error("Editor login failed:", error);
 
-        passwordError.classList.remove(
-            "hidden"
-        );
+        passwordError.textContent =
+            "Could not contact the editor service.";
 
+        passwordError.classList.remove("hidden");
+
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Enter Editor";
     }
 }
 
@@ -2909,7 +3051,8 @@ importFile.addEventListener(
                         null;
 
 
-                    saveState();
+                    mapDirty = true;
+                    updateSaveButton();
 
                     renderFloors();
 
@@ -2919,7 +3062,7 @@ importFile.addEventListener(
 
 
                     alert(
-                        "Map imported successfully."
+                        "Map imported into the editor. Click Save Changes to publish it to the shared atlas."
                     );
 
                 }
@@ -2974,8 +3117,14 @@ exportButton.addEventListener(
 const importButton =
     document.createElement("button");
 
+importButton.id =
+    "importMapButton";
+
 importButton.textContent =
     "Import";
+
+importButton.style.display =
+    "none";
 
 
 importButton.addEventListener(
@@ -2991,6 +3140,30 @@ importExportContainer.appendChild(
 importExportContainer.appendChild(
     importButton
 );
+
+const saveSharedMapButton =
+    document.createElement("button");
+
+saveSharedMapButton.id =
+    "saveSharedMapButton";
+
+saveSharedMapButton.textContent =
+    "💾 Save Changes";
+
+saveSharedMapButton.style.display =
+    "none";
+
+saveSharedMapButton.addEventListener(
+    "click",
+    saveSharedMap
+);
+
+document
+    .querySelector(".toolbar")
+    .insertBefore(
+        saveSharedMapButton,
+        document.getElementById("themeButton")
+    );
 
 
 document
@@ -3109,58 +3282,5 @@ function escapeAttribute(value) {
 
 
 /* =========================================================
-   SHA-256
+   END OF SCRIPT
 ========================================================= */
-
-async function sha256(value) {
-
-    const data =
-        new TextEncoder()
-            .encode(value);
-
-
-    const hashBuffer =
-        await crypto.subtle.digest(
-            "SHA-256",
-            data
-        );
-
-
-    const hashArray =
-        Array.from(
-            new Uint8Array(
-                hashBuffer
-            )
-        );
-
-
-    return hashArray
-        .map(
-            byte =>
-                byte
-                    .toString(16)
-                    .padStart(2, "0")
-        )
-        .join("");
-}
-
-
-/* =========================================================
-   PASSWORD HASH GENERATOR
-
-   Open the browser console and run:
-
-   generatePasswordHash("your password")
-
-   It will print the SHA-256 hash.
-
-========================================================= */
-
-window.generatePasswordHash =
-    async function(password) {
-
-        console.log(
-            await sha256(password)
-        );
-
-    };
