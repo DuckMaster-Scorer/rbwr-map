@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RBWR Facility Atlas</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =========================
+         TOP BAR
+    ========================== -->
+
+    <header class="topbar">
+
+        <div class="brand">
+            <div class="brand-title">RBWR</div>
+            <div class="brand-subtitle">FACILITY ATLAS</div>
+        </div>
+
+        <div class="toolbar">
+
+            <select id="floorSelector" title="Select floor"></select>
+
+            <button id="addFloorButton">
+                + Floor
+            </button>
+
+            <button id="themeButton" title="Toggle light/dark mode">
+                ☾
+            </button>
+
+            <button id="editButton" class="primary-button">
+                🔒 Edit
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         MAIN APPLICATION
+    ========================== -->
+
+    <main class="application">
+
+        <!-- MAP -->
+
+        <section class="map-container">
+
+            <div id="mapViewport">
+
+                <div id="mapCanvas">
+
+                    <div id="grid"></div>
+
+                    <svg
+                        id="mapSvg"
+                        xmlns="http://www.w3.org/2000/svg"
+                    ></svg>
+
+                </div>
+
+            </div>
+
+
+            <!-- MAP CONTROLS -->
+
+            <div class="map-controls">
+
+                <button id="zoomOut">−</button>
+
+                <span id="zoomLabel">100%</span>
+
+                <button id="zoomIn">+</button>
+
+                <button id="resetView">
+                    Reset
+                </button>
+
+            </div>
+
+
+            <!-- EDITOR TOOLS -->
+
+            <div
+                id="editorToolbar"
+                class="editor-toolbar hidden"
+            >
+
+                <button
+                    id="rectangleTool"
+                    class="tool-button active"
+                >
+                    Rectangle
+                </button>
+
+                <button
+                    id="polygonTool"
+                    class="tool-button"
+                >
+                    Polygon
+                </button>
+
+                <button
+                    id="selectTool"
+                    class="tool-button"
+                >
+                    Select
+                </button>
+
+                <button
+                    id="cancelDrawing"
+                    class="tool-button danger"
+                >
+                    Cancel
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             INFORMATION PANEL
+        ========================== -->
+
+        <aside
+            id="infoPanel"
+            class="info-panel"
+        >
+
+            <div class="panel-empty">
+
+                <div class="panel-empty-icon">
+                    🗺️
+                </div>
+
+                <h2>Select a location</h2>
+
+                <p>
+                    Click a room, corridor, hall or other
+                    location on the map to view its information.
+                </p>
+
+            </div>
+
+        </aside>
+
+    </main>
+
+
+    <!-- =========================
+         PASSWORD MODAL
+    ========================== -->
+
+    <div
+        id="passwordModal"
+        class="modal hidden"
+    >
+
+        <div class="modal-card">
+
+            <button
+                id="closePasswordModal"
+                class="modal-close"
+            >
+                ×
+            </button>
+
+            <h2>Editor Access</h2>
+
+            <p>
+                Enter the editor password to modify the atlas.
+            </p>
+
+            <input
+                id="passwordInput"
+                type="password"
+                placeholder="Password"
+                autocomplete="current-password"
+            >
+
+            <div
+                id="passwordError"
+                class="error-message hidden"
+            >
+                Incorrect password.
+            </div>
+
+            <button
+                id="passwordSubmit"
+                class="primary-button full-width"
+            >
+                Enter Editor
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         FLOOR MODAL
+    ========================== -->
+
+    <div
+        id="floorModal"
+        class="modal hidden"
+    >
+
+        <div class="modal-card">
+
+            <button
+                id="closeFloorModal"
+                class="modal-close"
+            >
+                ×
+            </button>
+
+            <h2>New Floor</h2>
+
+            <p>
+                Give this floor a name.
+            </p>
+
+            <input
+                id="floorNameInput"
+                type="text"
+                placeholder="e.g. U1 Level 2"
+            >
+
+            <button
+                id="createFloorButton"
+                class="primary-button full-width"
+            >
+                Create Floor
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         IMPORT / EXPORT
+    ========================== -->
+
+    <input
+        id="importFile"
+        type="file"
+        accept=".json"
+        hidden
+    >
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
+    <script src="script.js"></script>
+
+</body>
+</html>
